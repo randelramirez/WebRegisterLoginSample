@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -21,6 +24,12 @@ namespace WebRegisterLoginSample.Controllers
         }
 
         public IActionResult Index()
+        {
+            return View();
+        }
+
+        [Authorize]
+        public IActionResult About()
         {
             return View();
         }
@@ -59,6 +68,13 @@ namespace WebRegisterLoginSample.Controllers
 
             if (attemptedPassword.Equals(existing.Password))
             {
+                // authenticate and create cookie 
+                var identity = new ClaimsIdentity("cookies");
+                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+                identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
+
+                await HttpContext.SignInAsync("cookies", new ClaimsPrincipal(identity), new AuthenticationProperties());
+
                 Debug.WriteLine("Login successful");
             }
             else
